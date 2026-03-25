@@ -1,6 +1,8 @@
 <!doctype html>
 <html>
 <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Organon - tool for music scale study and experiments</title>
     <style>
         body {text-align: center}
@@ -25,19 +27,43 @@ Name:<br/>
 Multiplier:<br/>
 <input type="text" id="frqmul" placeholder="1 / 1"/><br/><br/>
 
-<button onclick="addNote()">Add Note</button>
+<button onclick="addNote()">ADD NOTE</button>
+<br/><br/>
+<button onclick="delNote()">Delete Note by Name</button>
 
 <script>
 var ctx = new AudioContext();
 
 function addNote() {
+    var name = document.getElementById('notename').value;
+    if (document.getElementById('btn-' + name) !== null) {
+        alert('Such Note Name Already Exists');
+        return;
+    }
     var base = document.getElementById('basefrq').value;
     var mul = document.getElementById('frqmul').value;
-    var name = document.getElementById('notename').value;
     var btn = document.createElement('button');
     btn.innerText = name + '\n' + mul;
+    var mulval = eval(mul);
+    btn.setAttribute('id', 'btn-' + name);
+    btn.setAttribute('x-mul', mulval);
     btn.setAttribute('onclick', 'play(' + base + '*' + mul + ')');
-    document.getElementById('btnfield').appendChild(btn);
+    var div = document.getElementById('btnfield');
+    var next = div.firstElementChild;
+    while (next !== null && parseFloat(next.getAttribute('x-mul')) < mulval) {
+        next = next.nextElementSibling;
+    }
+    if (next === null) {
+        div.appendChild(btn);
+    } else {
+        div.insertBefore(btn, next);
+    }
+}
+
+function delNote() {
+    var name = document.getElementById('notename').value;
+    var btn = document.getElementById('btn-' + name);
+    if (btn !== null) btn.remove();
 }
 
 function play(frq) {
@@ -46,7 +72,7 @@ function play(frq) {
     var gain = ctx.createGain();
     gain.gain.setValueAtTime(0, ctx.currentTime);
     gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1);
-    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.4);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.2);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
     osc.connect(gain);
     gain.connect(ctx.destination);
