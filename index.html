@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+    <title>Organon - tool for music scale study and experiments</title>
+    <style>
+        body {text-align: center}
+        input {text-align: center}
+        hr {width: 75%}
+    </style>
+</head>
+<body>
+<h1>Organon</h1>
+
+<div id="btnfield"></div>
+
+<hr/>
+Base Frequency:<br/>
+<input type="text" id="basefrq" value="440"/>
+
+<h3>Add Notes</h3>
+
+Name:<br/>
+<input type="text" id="notename" placeholder="lalala"/><br/><br/>
+
+Multiplier:<br/>
+<input type="text" id="frqmul" placeholder="1 / 1"/><br/><br/>
+
+<button onclick="addNote()">Add Note</button>
+
+<script>
+var ctx = new AudioContext();
+
+function addNote() {
+    var base = document.getElementById('basefrq').value;
+    var mul = document.getElementById('frqmul').value;
+    var name = document.getElementById('notename').value;
+    var btn = document.createElement('button');
+    btn.innerText = name + '\n' + mul;
+    btn.setAttribute('onclick', 'play(' + base + '*' + mul + ')');
+    document.getElementById('btnfield').appendChild(btn);
+}
+
+function play(frq) {
+    var osc = ctx.createOscillator();
+    osc.frequency.setValueAtTime(frq, ctx.currentTime);
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.1);
+    gain.gain.linearRampToValueAtTime(1, ctx.currentTime + 0.4);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime+1.51);
+}
+</script>
+</body>
+</html>
