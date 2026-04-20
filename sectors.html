@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+<title>Organon Sectors Generator</title>
+<body>
+
+<canvas id="field"></canvas>
+
+<script>
+
+var circles = 9;
+var sectors = [20, 24, 27, 30, 32, 36, 40, 45, 48];
+var swidth = 7;
+var smin = 10;
+var dpi = 100;
+
+var dpm = dpi / 25.4;
+var minRad = smin * sectors[0] / Math.PI * dpm;
+var maxRad = minRad + swidth * sectors.length * dpm;
+
+var canvas = document.getElementById('field');
+var size = Math.ceil(maxRad*2);
+canvas.width = canvas.height = size;
+canvas.style.height = canvas.style.width = size + 'px';
+
+var ctx = canvas.getContext('2d');
+
+for (var y = 0; y < size; y++) {
+    for (var x = 0; x < size; x++) {
+        var dx = x - size/2;
+        var dy = y - size/2;
+        var rad = Math.hypot(dx, dy);
+        var phi = Math.atan2(dy, dx);
+        var circle = Math.floor((rad - minRad) / (swidth * dpm));
+        if (0 > circle || circle > sectors.length-1)
+            continue;
+        var secN = Math.floor((phi / Math.PI + 1) * sectors[circle]);
+        ctx.fillStyle = (secN % 2 ? 'black' : 'white');
+        ctx.fillRect(x, y, 1, 1);
+    }
+}
+</script>
+
+</body>
+</html>
