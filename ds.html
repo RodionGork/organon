@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Circle Sector Generator | Alternating Black & White Sectors</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* avoid accidental text selection while interacting */
+        }
+
+        body {
+            background: linear-gradient(145deg, #2c3e50 0%, #1a2632 100%);
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+        }
+
+        /* main card container */
+        .card {
+            background: rgba(22, 28, 36, 0.75);
+            backdrop-filter: blur(4px);
+            border-radius: 2.5rem;
+            padding: 1.8rem 2rem 2rem 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            transition: all 0.2s ease;
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.8rem;
+            background: #0f1217;
+            border-radius: 32px;
+            padding: 16px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 50%;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            background-color: #eef2f5; /* fallback for tiny border, but sectors cover full circle */
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            justify-content: center;
+            align-items: flex-end;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 160px;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            color: #cfdee9;
+            text-transform: uppercase;
+            background: rgba(0,0,0,0.35);
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            width: fit-content;
+            backdrop-filter: blur(2px);
+        }
+
+        .input-group input {
+            background: #1e2a32;
+            border: 1px solid #3e5564;
+            padding: 0.7rem 1rem;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #f0f3f8;
+            outline: none;
+            transition: all 0.2s;
+            width: 100%;
+            text-align: center;
+        }
+
+        .input-group input:focus {
+            border-color: #7f8cfa;
+            box-shadow: 0 0 0 2px rgba(127,140,250,0.3);
+            background: #1f2e38;
+        }
+
+        .input-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .input-group input[type="number"]::-webkit-inner-spin-button,
+        .input-group input[type="number"]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+
+        button {
+            background: #3e5a6b;
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 3rem;
+            font-weight: bold;
+            font-size: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 5px 8px rgba(0,0,0,0.2);
+            margin-top: 1.2rem;
+            letter-spacing: 0.5px;
+            background: linear-gradient(120deg, #4a6f86, #2c4758);
+        }
+
+        button:hover {
+            background: linear-gradient(120deg, #5d85a0, #3a5e74);
+            transform: scale(1.02);
+            box-shadow: 0 8px 14px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .info-text {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 1.5rem;
+            color: #bcd0df;
+            background: rgba(0,0,0,0.25);
+            border-radius: 60px;
+            padding: 0.5rem 1rem;
+            backdrop-filter: blur(2px);
+        }
+
+        .info-text span {
+            font-weight: bold;
+            color: #ffe0a3;
+        }
+
+        @media (max-width: 550px) {
+            .card {
+                padding: 1.2rem;
+            }
+            .controls {
+                gap: 1rem;
+            }
+            .input-group {
+                min-width: 130px;
+            }
+            button {
+                padding: 0.6rem 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="canvas-wrapper">
+        <canvas id="sectorCanvas" width="400" height="400" style="width:400px; height:400px">
+            Your browser does not support the canvas element.
+        </canvas>
+    </div>
+
+    <div class="controls">
+        <div class="input-group">
+            <label>🔘 Circle Diameter (px)</label>
+            <input type="number" id="sizeInput" value="904" step="4" min="40" max="600">
+        </div>
+        <div class="input-group">
+            <label>✂️ Number of Sectors</label>
+            <input type="number" id="sectorsInput" value="12" step="1" min="1" max="360">
+        </div>
+        <div class="input-group">
+            <button id="drawBtn">🎨 Generate Sectors</button>
+        </div>
+    </div>
+    <div class="info-text">
+        ⚫ Alternating black & white sectors | ⚪ Circle split into <span id="sectorCountPreview">12</span> equal sectors
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ----- DOM elements -----
+        const canvas = document.getElementById('sectorCanvas');
+        const sizeInput = document.getElementById('sizeInput');
+        const sectorsInput = document.getElementById('sectorsInput');
+        const drawBtn = document.getElementById('drawBtn');
+        const sectorPreviewSpan = document.getElementById('sectorCountPreview');
+
+        // internal variables to keep track of current rendering params
+        let currentDiameter = 200+28*9;   // pixels
+        let currentSectors = 20;     // amount of sectors (>=1)
+        
+        // helper: clamp & sanitize values
+        function sanitizeDiameter(raw) {
+            let val = parseInt(raw, 10);
+            if (isNaN(val)) return 200+28*9;
+            return Math.min(600, Math.max(40, val));
+        }
+        
+        function sanitizeSectors(raw) {
+            let val = parseInt(raw, 10);
+            if (isNaN(val)) return 12;
+            // sectors must be at least 1, max 360 (for performance/visual reason, but any reasonable integer works)
+            return Math.min(360, Math.max(1, val));
+        }
+        
+        // update preview span for sectors
+        function updatePreview() {
+            let sectorsVal = sanitizeSectors(sectorsInput.value);
+            sectorPreviewSpan.innerText = sectorsVal;
+        }
+        
+        // core drawing routine: draws a circle with given diameter (px) and sectors count,
+        // alternating fill between black (#000000) and white (#ffffff)
+        function drawAlternatingSectors(diameterPx, sectorCount) {
+            if (!canvas) return;
+            
+            // ensure sectorCount is a positive integer
+            const sectors = Math.max(1, Math.floor(sectorCount));
+            if (sectors === 0) return;
+                        
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            
+            // clear canvas with a neutral background (though full circle covers everything, but to be safe)
+            //ctx.clearRect(0, 0, diameterPx, diameterPx);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = diameterPx / 2;
+            
+            // angle step for each sector (in radians)
+            const angleStep = (Math.PI * 2) / sectors;
+            
+            // iterate sectors and draw filled pie slices
+            for (let i = 0; i < sectors; i++) {
+                const startAngle = i * angleStep;
+                const endAngle = (i + 1) * angleStep;
+                
+                // alternating fill style: even index -> white, odd index -> black
+                // starting with white at sector 0 (i=0) to match "alternating white and black"
+                // So i%2 === 0 => white, else black
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                
+                if (i % 2 === 0) {
+                    ctx.fillStyle = '#FFFFFF';   // white
+                } else {
+                    ctx.fillStyle = '#000000';   // black
+                }
+                ctx.fill();
+            }
+            
+            // OPTIONAL: draw a subtle inner stroke or border to enhance crispness if needed.
+            // To improve edge definition and give a refined look, draw a thin outline circle
+            // This doesn't break the sector concept but makes boundaries pop slightly
+            // It's purely aesthetic and keeps sectors clean.
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius - 0.5, 0, Math.PI * 2);
+            ctx.strokeStyle = '#AAAAAA';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            
+            // also draw center point optionally? not needed but adds a nice micro detail
+            // (just for style: a tiny dot at center ensures alignment)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 1.2, 0, 2 * Math.PI);
+            ctx.fillStyle = '#888888';
+            ctx.fill();
+        }
+        
+        // render with current validated parameters
+        function render() {
+            const rawDiameter = sizeInput.value;
+            const rawSectors = sectorsInput.value;
+            
+            const validDiameter = sanitizeDiameter(rawDiameter);
+            const validSectors = sanitizeSectors(rawSectors);
+            
+            // update input fields in case they were out of bounds (show clamped values)
+            if (sizeInput.value != validDiameter) sizeInput.value = validDiameter;
+            if (sectorsInput.value != validSectors) sectorsInput.value = validSectors;
+            
+            // update global tracking & preview
+            currentDiameter = validDiameter;
+            currentSectors = validSectors;
+            updatePreview();
+            
+            // set canvas dimensions in pixels (physical resolution)
+            // we use the same width/height for crisp rendering (no extra scaling)
+            canvas.width = currentDiameter;
+            canvas.height = currentDiameter;
+            
+            // also update inline CSS style to match actual dimension (avoid distortion)
+            canvas.style.width = `${currentDiameter}px`;
+            canvas.style.height = `${currentDiameter}px`;
+
+            // perform the drawing
+            var cnt = [20, 24, 27, 30, 32, 36, 40, 45, 48];
+            for (var i = cnt.length-1; i >= 0; i--) {
+                drawAlternatingSectors(currentDiameter, cnt[i] * 2);
+                currentDiameter -= 28;
+            }
+        }
+        
+        // event handlers with additional safeguard for extreme values like 0 sectors
+        function handleDraw() {
+            render();
+        }
+        
+        // real-time optional: if user wants live update? Not by default but provide also 'Enter' key or live input?
+        // For better UX, we update on button click. But also we can add "input" event on number fields? 
+        // But to avoid excessive rendering while typing (especially with huge sliders), only button click triggers.
+        // However, we will also add an option to update if user presses Enter inside input fields.
+        function attachEnterKeyHandler(inputElement) {
+            inputElement.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    render();
+                }
+            });
+        }
+        
+        // Additionally, when the window loads or the canvas dimension changes due to size, render initially.
+        // Also handle case when sectorsInput changes to ensure preview updates instantly but drawing on explicit click only.
+        // But for live preview of the sector count in the info bar, we update on any input change, but actual canvas draw only on button or enter.
+        sectorsInput.addEventListener('input', function() {
+            let previewVal = sanitizeSectors(sectorsInput.value);
+            sectorPreviewSpan.innerText = previewVal;
+            // (optional: we do NOT redraw the canvas here, just preview text)
+        });
+        
+        sizeInput.addEventListener('input', function() {
+            // just ensure the preview doesn't show anything regarding sectors? Not needed.
+            // but we can sanitize size preview only on the info? Not needed.
+        });
+        
+        // Set up draw button
+        drawBtn.addEventListener('click', handleDraw);
+        
+        // add enter key for both inputs
+        attachEnterKeyHandler(sizeInput);
+        attachEnterKeyHandler(sectorsInput);
+        
+        // also handle when user leaves the input (blur) maybe re-sync to avoid weird states
+        sizeInput.addEventListener('blur', () => {
+            let v = sanitizeDiameter(sizeInput.value);
+            if (sizeInput.value != v) sizeInput.value = v;
+        });
+        sectorsInput.addEventListener('blur', () => {
+            let v = sanitizeSectors(sectorsInput.value);
+            if (sectorsInput.value != v) sectorsInput.value = v;
+            sectorPreviewSpan.innerText = v;
+        });
+        
+        // initial render: default values (diameter 320, sectors 12)
+        // ensure canvas initial draw matches the spec
+        render();
+        
+        // additionally if the container or orientation changes? not needed, but ensure that any dynamic resizing not required
+        // Since canvas uses absolute pixel dimensions, no extra adaptation required.
+        // Provide a window resize guard? Not needed because canvas size explicitly set via diameter.
+        
+        // For edge case where very large sector count (like 360) is performant enough. Canvas path arcs are fine.
+        // For performance and beauty, the algorithm uses simple fill per sector.
+        
+        // small extra: if sectors == 1, it draws full circle with white? alternating logic: sector 0 white, full circle white.
+        // But the spec says alternating black and white, with 1 sector only one color (white), that is still valid because alternating pattern starts with white.
+        // If sectors == 2: white and black semicircle. Perfect.
+        // For sectors > 360, we cap at 360, but logic works for any number.
+        // Also ensure that if user enters very large diameter (like 600), canvas renders well.
+        
+        // Provide a secondary message: if diameter or sectors change, click generate
+        console.log('Circle sector generator ready — alternating black & white sectors');
+    })();
+</script>
+</body>
+</html>
