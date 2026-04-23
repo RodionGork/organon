@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+<title>Organon Sectors Generator</title>
+<body>
+
+<canvas id="field"></canvas>
+
+<script>
+
+var sectors = [20, 24, 27, 30, 32, 36, 40, 45, 48];
+var swidth = 7;
+var smin = 5.5;
+var dpi = 100;
+
+var dpm = dpi / 25.4;
+var minRad = smin * sectors[0] / Math.PI * dpm;
+var maxRad = minRad + swidth * sectors.length * dpm;
+
+var canvas = document.getElementById('field');
+var size = Math.ceil(maxRad*2);
+canvas.width = canvas.height = size;
+canvas.style.height = canvas.style.width = size + 'px';
+
+var ctx = canvas.getContext('2d');
+
+var crad = Math.floor(swidth / 2 * dpm);
+ctx.fillStyle = 'black';
+
+for (var i = 0; i < sectors.length; i++) {
+    var n = sectors[i];
+    var r = minRad + swidth * (i + 0.5) * dpm;
+    var da = Math.PI * 2 / n;
+    for (var j = 0; j < n; j++) {
+        ctx.beginPath();
+        ctx.moveTo(size/2 + r * Math.cos(da * (j - 0.4)), size/2 + r * Math.sin(da * (j - 0.4)));
+        ctx.lineTo(size/2 + (r + crad) * Math.cos(da * j), size/2 + (r + crad) * Math.sin(da * j));
+        ctx.lineTo(size/2 + r * Math.cos(da * (j + 0.4)), size/2 + r * Math.sin(da * (j + 0.4)));
+        ctx.lineTo(size/2 + (r - crad) * Math.cos(da * j), size/2 + (r - crad) * Math.sin(da * j));
+        ctx.closePath();
+        ctx.fill();
+    }
+}
+
+</script>
+
+</body>
+</html>

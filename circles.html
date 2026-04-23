@@ -24,20 +24,20 @@ canvas.style.height = canvas.style.width = size + 'px';
 
 var ctx = canvas.getContext('2d');
 
-for (var y = 0; y < size; y++) {
-    for (var x = 0; x < size; x++) {
-        var dx = x - size/2;
-        var dy = y - size/2;
-        var rad = Math.hypot(dx, dy);
-        var phi = Math.atan2(dy, dx);
-        var circle = Math.floor((rad - minRad) / (swidth * dpm));
-        if (0 > circle || circle > sectors.length-1)
-            continue;
-        var secN = Math.floor((phi / Math.PI + 1) * sectors[circle]);
-        ctx.fillStyle = (secN % 2 ? 'black' : 'white');
-        ctx.fillRect(x, y, 1, 1);
+var crad = Math.floor(swidth / 2 * dpm);
+ctx.fillStyle = 'black';
+
+for (var i = 0; i < sectors.length; i++) {
+    var n = sectors[i];
+    var r = minRad + swidth * (i + 0.5) * dpm;
+    for (var j = 0; j < n; j++) {
+        var a = Math.PI * 2 * j / n;
+        ctx.beginPath();
+        ctx.arc(size/2 + r * Math.cos(a), size/2 + r * Math.sin(a), crad, 0, Math.PI*2);
+        ctx.fill();
     }
 }
+
 </script>
 
 </body>
